@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meesho Label Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.day-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.day-btn{
+  width:54px;height:42px;border-radius:var(--rs);
+  border:1px solid var(--border);background:var(--input);
+  color:var(--t3);font-size:12px;font-weight:600;
+  cursor:pointer;transition:.15s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1.1;user-select:none;
+}
+.day-btn:hover{border-color:var(--border2);background:var(--hover);color:var(--t2)}
+.day-btn.on{
+  border-color:var(--accent);background:var(--accent-bg);color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent-bg),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.day-btn .dn{font-size:11px;font-weight:700;letter-spacing:.03em}
+.day-btn .dd{font-size:9px;opacity:.6;margin-top:1px}
+.day-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.day-summary{font-size:11px;color:var(--t3);margin-top:10px;min-height:16px}
+.day-summary strong{color:var(--t2)}
+.day-summary .warn{color:var(--red)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-logo">📦</div>
+    <h1>Meesho Label Bot</h1>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-stat"><span class="dot" id="sDot"></span><span id="sTxt">Idle</span></div>
+    <div class="hdr-time" id="sTime">--:--:--</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="st a"><div class="st-ico">👥</div><div class="st-v" id="nA">0</div><div class="st-l">Accounts</div></div>
+    <div class="st g"><div class="st-ico">✅</div><div class="st-v" id="nS">0</div><div class="st-l">Active</div></div>
+    <div class="st w"><div class="st-ico">📥</div><div class="st-v" id="nD">0</div><div class="st-l">Today PDFs</div></div>
+    <div class="st b"><div class="st-ico">⏰</div><div class="st-v" id="nR">0</div><div class="st-l">Runs / Day</div></div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ACCOUNTS -->
+    <div class="cd">
+      <div class="cd-h">
+        <h2>👥 Accounts</h2>
+        <div class="cd-ha">
+          <button class="bp bsm" onclick="showM('mAdd')">+ Add</button>
+          <button class="bs bsm" id="runBtn" onclick="runBot()">▶ Run All</button>
+        </div>
+      </div>
+      <div class="cd-b"><div class="al" id="accList"><div class="em"><div class="ic">📋</div><p>Loading...</p></div></div></div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="cd">
+      <div class="cd-h">
+        <h2>⏰ Schedule</h2>
+        <div class="cd-ha"><button class="bp bsm" onclick="saveSched()">Save</button></div>
+      </div>
+      <div class="cd-b">
+        <div class="fg">
+          <label>Run Times (24hr IST)</label>
+          <div id="schTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+          <input type="text" id="schIn" placeholder="09:00,13:00,17:00,20:00" style="display:none">
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <input type="time" id="custTime" style="flex:1;padding:6px 10px;font-size:12px;height:32px;border-radius:var(--rs);background:var(--input);border:1px solid var(--border);color:var(--t1)">
+            <button class="bg bsm" onclick="addCustomTime()" style="height:32px">+ Add Time</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Time Presets</label>
+          <div class="pg">
+            <button class="bg bsm" onclick="preset('09:00,13:00,17:00,20:00')">4x Daily</button>
+            <button class="bg bsm" onclick="preset('08:00,12:00,16:00,20:00')">4x Early</button>
+            <button class="bg bsm" onclick="preset('09:00,21:00')">2x Daily</button>
+            <button class="bg bsm" onclick="preset('10:00')">Once</button>
+            <button class="bg bsm" onclick="preset('06:00,10:00,14:00,18:00,22:00')">5x</button>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Run On These Days</label>
+          <div class="day-row" id="dayRow">
+            <button class="day-btn" data-day="mon" onclick="toggleDay(this)"><span class="dn">Mon</span><span class="dd">1</span></button>
+            <button class="day-btn" data-day="tue" onclick="toggleDay(this)"><span class="dn">Tue</span><span class="dd">2</span></button>
+            <button class="day-btn" data-day="wed" onclick="toggleDay(this)"><span class="dn">Wed</span><span class="dd">3</span></button>
+            <button class="day-btn" data-day="thu" onclick="toggleDay(this)"><span class="dn">Thu</span><span class="dd">4</span></button>
+            <button class="day-btn" data-day="fri" onclick="toggleDay(this)"><span class="dn">Fri</span><span class="dd">5</span></button>
+            <button class="day-btn" data-day="sat" onclick="toggleDay(this)"><span class="dn">Sat</span><span class="dd">6</span></button>
+            <button class="day-btn" data-day="sun" onclick="toggleDay(this)"><span class="dn">Sun</span><span class="dd">7</span></button>
+          </div>
+          <div class="day-presets">
+            <button class="bg bsm" onclick="setDays('all')">Every Day</button>
+            <button class="bg bsm" onclick="setDays('weekdays')">Weekdays</button>
+            <button class="bg bsm" onclick="setDays('weekend')">Weekends</button>
+            <button class="bg bsm" onclick="setDays('none')">Clear All</button>
+          </div>
+          <div class="day-summary" id="daySummary"></div>
+        </div>
+
+        <div class="mr">
+          <div class="mi"><div class="lb">Last Run</div><div class="vl" id="mLast">Never</div></div>
+          <div class="mi"><div class="lb">Next Run</div><div class="vl" id="mNext">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="cd gf">
+      <div class="cd-h">
+        <h2>📋 Live Logs</h2>
+        <div class="cd-ha">
+          <button class="bg bsm" onclick="clrLog()">Clear</button>
+          <button class="bg bsm" onclick="fullLog()">Full Log</button>
+        </div>
+      </div>
+      <div class="cd-b" style="padding:10px">
+        <div class="lc" id="logBox"><div class="ll info">Waiting for logs...</div></div>
+      </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="cd">
+      <div class="cd-h"><h2>📤 Upload Session</h2></div>
+      <div class="cd-b">
+        <p style="font-size:12px;color:var(--t2);margin-bottom:14px">Run <code>login_setup.py</code> on your PC, then upload the generated session file.</p>
+        <div class="fg">
+          <label>Select Account</label>
+          <select id="upSel" onchange="onSelChange()"><option value="">-- Choose --</option></select>
+        </div>
+        <div class="fdiv">or add new</div>
+        <div class="fg">
+          <input type="text" id="upNew" placeholder="New account ID..." oninput="onNewInput()">
+        </div>
+        <div id="upStat"></div>
+        <div class="uz" id="upZone" onclick="document.getElementById('upFile').click()">
+          <input type="file" id="upFile" accept=".json" onchange="onFileSel(this)">
+          <div class="uz-ic" id="upIco">📁</div>
+          <div class="uz-tx" id="upTx">Click to select <strong>state.json</strong></div>
+          <div class="uz-ht">data/&lt;account&gt;/state.json</div>
+        </div>
+        <div id="fpBox" style="display:none"></div>
+        <button class="bp bf" id="upBtn" onclick="doUpload()" disabled style="margin-top:12px">Upload Session</button>
+        <button class="bs bf" id="autoLoginBtn" onclick="doAutoLogin()" disabled style="margin-top:8px">🔑 Auto Login</button>
+        <div class="ib">
+          <div class="ct">
+            <strong style="color:var(--t1);display:block;margin-bottom:4px">How to generate:</strong>
+            1. PC: <code>python login_setup.py &lt;id&gt;</code><br>
+            2. Email and password auto-filled and auto-login<br>
+            3. Saved to <code>data/&lt;id&gt;/state.json</code><br>
+            4. Upload that file here
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="cd">
+      <div class="cd-h">
+        <h2>⚙️ Settings</h2>
+        <div class="cd-ha"><button class="bg bsm" onclick="saveSet()">Save</button></div>
+      </div>
+      <div class="cd-b">
+        <div class="fg">
+          <label>Run Mode</label>
+          <select id="hlSel">
+            <option value="false">Visible Browser (debug)</option>
+            <option value="true">Headless (server)</option>
+          </select>
+        </div>
+        <div class="ib wb">
+          <strong>⚠️ Server Mode</strong>
+          <p>Use Headless on servers. Upload sessions from your local PC.</p>
+        </div>
+        <div class="ib" style="margin-top:10px">
+          <div class="ct">
+            <strong style="color:var(--t1);display:block;margin-bottom:4px">Notes:</strong>
+            • If login fails, run <code>login_setup.py</code> again and re-upload<br>
+            • No OTP needed, just email and password<br>
+            • Session file is like being logged in so keep it private
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOWNLOADS -->
+    <div class="cd gf">
+      <div class="cd-h">
+        <h2>📥 Downloads</h2>
+        <div class="cd-ha"><button class="bg bsm" onclick="loadAllDl()">Show All</button></div>
+      </div>
+      <div class="cd-b"><div class="dl" id="dlList"><div class="em"><div class="ic">📭</div><p>No downloads yet today</p></div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="mo" id="mAdd" onclick="if(event.target===this)closeM('mAdd')">
+  <div class="md">
+    <div class="md-h"><h3>Add Account</h3><p>Add a Meesho supplier account</p></div>
+    <div class="md-b">
+      <div class="fg"><label>Account ID</label><input type="text" id="nId" placeholder="e.g. lavanyafashion"></div>
+      <div class="fr">
+        <div class="fg"><label>Email</label><input type="email" id="nEm" placeholder="email@example.com"></div>
+        <div class="fg"><label>Password</label><input type="password" id="nPw" placeholder="password"></div>
+      </div>
+      <div class="ib" style="margin-top:2px"><p>Saved to <code>.env</code> locally. Only used to auto-fill login.</p></div>
+    </div>
+    <div class="md-f">
+      <button class="bg" onclick="closeM('mAdd')">Cancel</button>
+      <button class="bp" onclick="addAcc()">Add Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="tc" id="tC"></div>
+
+<script>
+var API_BASE = localStorage.getItem('API_BASE') || '';
+if (!API_BASE && (window.location.port === '5500' || window.location.port === '5501' || window.location.protocol === 'file:')) {
+    API_BASE = window.location.protocol + '//' + window.location.hostname + ':5000';
+}
+var ALL_DAYS = ['mon','tue','wed','thu','fri','sat','sun'];
+var DAY_LABELS = {mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
+var autoScr = true;
+var selFile = null;
+var upId = null;
+var accCache = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    refresh();
+    refreshLog();
+    setInterval(refresh, 4000);
+    setInterval(refreshLog, 1500);
+    var z = document.getElementById('upZone');
+    z.addEventListener('dragover', function(e) { e.preventDefault(); z.classList.add('dov'); });
+    z.addEventListener('dragleave', function() { z.classList.remove('dov'); });
+    z.addEventListener('drop', function(e) {
+        e.preventDefault(); z.classList.remove('dov');
+        var f = e.dataTransfer.files[0];
+        if (f && f.name.endsWith('.json')) {
+            var i = document.getElementById('upFile');
+            var dt = new DataTransfer(); dt.items.add(f); i.files = dt.files;
+            onFileSel(i);
+        } else { toast('Drop a .json file', 'er'); }
+    });
+});
+
+/* ===== DAY PICKER ===== */
+function toggleDay(btn) {
+    btn.classList.toggle('on');
+    updateDaySummary();
+}
+
+function setDays(mode) {
+    var btns = document.querySelectorAll('.day-btn');
+    for (var i = 0; i < btns.length; i++) {
+        var d = btns[i].getAttribute('data-day');
+        if (mode === 'all') btns[i].classList.add('on');
+        else if (mode === 'weekdays') {
+            if (d === 'mon' || d === 'tue' || d === 'wed' || d === 'thu' || d === 'fri') btns[i].classList.add('on');
+            else btns[i].classList.remove('on');
+        }
+        else if (mode === 'weekend') {
+            if (d === 'sat' || d === 'sun') btns[i].classList.add('on');
+            else btns[i].classList.remove('on');
+        }
+        else if (mode === 'none') btns[i].classList.remove('on');
+    }
+    updateDaySummary();
+}
+
+function getSelectedDays() {
+    var btns = document.querySelectorAll('.day-btn.on');
+    var out = [];
+    for (var i = 0; i < btns.length; i++) out.push(btns[i].getAttribute('data-day'));
+    return out;
+}
+
+function setSelectedDays(days) {
+    var btns = document.querySelectorAll('.day-btn');
+    for (var i = 0; i < btns.length; i++) {
+        var d = btns[i].getAttribute('data-day');
+        if (days.indexOf(d) !== -1) btns[i].classList.add('on');
+        else btns[i].classList.remove('on');
+    }
+    updateDaySummary();
+}
+
+function updateDaySummary() {
+    var sel = getSelectedDays();
+    var el = document.getElementById('daySummary');
+    if (sel.length === 7) {
+        el.innerHTML = '<strong>Every day</strong>';
+    } else if (sel.length === 0) {
+        el.innerHTML = '<span class="warn">No days selected — bot will not run on schedule!</span>';
+    } else {
+        var names = [];
+        for (var i = 0; i < sel.length; i++) names.push(DAY_LABELS[sel[i]]);
+        el.innerHTML = '<strong>' + names.join(', ') + '</strong>';
+    }
+}
+
+/* ===== API ===== */
+function api(u, o) {
+    if (!o) o = {};
+    var opts = {
+        headers: { 'Content-Type': 'application/json' },
+        method: o.method || 'GET'
+    };
+    if (o.body) opts.body = JSON.stringify(o.body);
+    
+    return fetch(API_BASE + u, opts).then(function(r) {
+        if (!r.ok) {
+            return r.json().then(function(d) {
+                throw new Error(d.error || 'Server error ' + r.status);
+            }).catch(function() {
+                throw new Error('Server error ' + r.status);
+            });
+        }
+        return r.json();
+    });
+}
+
+/* ===== REFRESH ===== */
+function refresh() {
+    api('/api/status').then(function(d) {
+        document.getElementById('nA').textContent = d.accounts.length;
+        document.getElementById('nS').textContent = d.accounts.filter(function(a) { return a.has_session; }).length;
+        document.getElementById('nD').textContent = d.today_downloads.length;
+        document.getElementById('nR').textContent = d.schedule.length;
+        document.getElementById('sTime').textContent = (d.server_time || '').split(' ')[1] || '--:--:--';
+
+        var dot = document.getElementById('sDot');
+        var txt = document.getElementById('sTxt');
+        if (d.running) { dot.className = 'dot on'; txt.textContent = 'Running: ' + (d.current_account || 'all'); }
+        else { dot.className = 'dot'; txt.textContent = 'Idle'; }
+
+        var rb = document.getElementById('runBtn');
+        rb.disabled = d.running;
+        rb.innerHTML = d.running ? '⏳ Running...' : '▶ Run All';
+
+        document.getElementById('schIn').value = d.schedule.join(', ');
+        renderSchTags();
+        document.getElementById('mLast').textContent = d.last_run ? new Date(d.last_run).toLocaleString() : 'Never';
+        document.getElementById('mNext').textContent = d.next_run || '—';
+        document.getElementById('hlSel').value = d.headless ? 'true' : 'false';
+
+        if (d.days) setSelectedDays(d.days);
+
+        renderAcc(d.accounts);
+        renderDl(d.today_downloads);
+        fillDrop(d.accounts);
+    }).catch(function(e) { console.error(e); });
+}
+
+/* ===== ACCOUNTS ===== */
+function makeAccItem(x) {
+    var isRunning = document.getElementById('runBtn').disabled;
+    var el = document.createElement('div');
+    el.className = 'ai';
+
+    // Left: avatar + info
+    var left = document.createElement('div');
+    left.className = 'ai-l';
+    var av = document.createElement('div');
+    av.className = 'ai-av' + (x.has_session ? '' : ' off');
+    av.textContent = x.id[0].toUpperCase();
+    var info = document.createElement('div');
+    var nm = document.createElement('div');
+    nm.className = 'ai-nm';
+    nm.textContent = x.id;
+    var mt = document.createElement('div');
+    mt.className = 'ai-mt';
+    mt.textContent = x.has_session ? ta(x.session_modified) + ' · ' + x.session_size_kb + 'KB' : 'No session';
+    info.appendChild(nm);
+    info.appendChild(mt);
+    left.appendChild(av);
+    left.appendChild(info);
+
+    // Right: badge + buttons
+    var right = document.createElement('div');
+    right.className = 'ai-r';
+
+    var badge = document.createElement('span');
+    badge.className = x.has_session ? 'bd bd-g' : 'bd bd-w';
+    badge.textContent = x.has_session ? 'Active' : 'No Session';
+    right.appendChild(badge);
+
+    // 🔑 Auto Login button
+    var btnLogin = document.createElement('button');
+    btnLogin.className = 'bp bxs';
+    btnLogin.title = 'Auto Login / Create Session';
+    btnLogin.textContent = '🔑';
+    btnLogin.disabled = isRunning;
+    btnLogin.addEventListener('click', function() { createSession(x.id); });
+    right.appendChild(btnLogin);
+
+    // ▶ Run button
+    var btnRun = document.createElement('button');
+    btnRun.className = 'bs bxs';
+    btnRun.textContent = '▶';
+    btnRun.disabled = isRunning;
+    btnRun.addEventListener('click', function() { runBot(x.id); });
+    right.appendChild(btnRun);
+
+    // ⬇ Download session button
+    var btnDl = document.createElement('button');
+    btnDl.className = 'bg bxs';
+    btnDl.textContent = '⬇';
+    btnDl.addEventListener('click', function() { location.href = API_BASE + '/api/download-session/' + x.id; });
+    right.appendChild(btnDl);
+
+    // ✕ Remove button
+    var btnRm = document.createElement('button');
+    btnRm.className = 'bg bxs';
+    btnRm.style.color = 'var(--red)';
+    btnRm.textContent = '✕';
+    btnRm.addEventListener('click', function() { rmAcc(x.id); });
+    right.appendChild(btnRm);
+
+    el.appendChild(left);
+    el.appendChild(right);
+    return el;
+}
+
+function renderAcc(a) {
+    var el = document.getElementById('accList');
+    el.innerHTML = '';
+    if (!a.length) {
+        el.innerHTML = '<div class="em"><div class="ic">👥</div><p>No accounts yet</p></div>';
+        return;
+    }
+    var wrap = document.createElement('div');
+    wrap.className = 'al';
+    for (var i = 0; i < a.length; i++) {
+        wrap.appendChild(makeAccItem(a[i]));
+    }
+    el.appendChild(wrap);
+}
+
+/* ===== DOWNLOADS ===== */
+function renderDl(d) {
+    var el = document.getElementById('dlList');
+    if (!d.length) { el.innerHTML = '<div class="em"><div class="ic">📭</div><p>No downloads yet today</p></div>'; return; }
+    var html = '<div class="dl">';
+    for (var i = 0; i < d.length; i++) {
+        var x = d[i];
+        html += '<div class="di"><div class="di-ic">📄</div><div class="di-nfo"><div class="di-ac">' + esc(x.account) + '</div><div class="di-fn" title="' + esc(x.file) + '">' + esc(x.file) + '</div></div><div class="di-mt"><div class="di-sz">' + x.size_kb + ' KB</div><div class="di-tm">' + x.time + '</div></div><button class="bg bsm" onclick="location.href=API_BASE+\'/api/download-pdf/' + x.path + '\'">⬇</button><button class="bg bsm" onclick="rmPdf(\'' + esc(x.path) + '\')" style="color:var(--red);margin-left:4px">✕</button></div>';
+    }
+    el.innerHTML = html + '</div>';
+}
+
+/* ===== LOGS ===== */
+function refreshLog() {
+    api('/api/logs').then(function(d) {
+        var el = document.getElementById('logBox');
+        if (!d.logs.length) { el.innerHTML = '<div class="ll info">Waiting...</div>'; return; }
+        var html = '';
+        for (var i = 0; i < d.logs.length; i++) {
+            var l = d.logs[i];
+            var c = l.level === 'WARNING' ? 'WARNING' : l.level === 'ERROR' ? 'ERROR' : 'info';
+            html += '<div class="ll ' + c + '"><span class="t">' + l.time + '</span> ' + esc(l.message) + '</div>';
+        }
+        el.innerHTML = html;
+        if (autoScr) el.scrollTop = el.scrollHeight;
+    }).catch(function() {});
+}
+
+function fullLog() {
+    api('/api/logs/file').then(function(d) {
+        var el = document.getElementById('logBox');
+        var lines = d.content.split('\n').slice(-300);
+        var html = '';
+        for (var i = 0; i < lines.length; i++) {
+            var l = lines[i];
+            var c = l.indexOf('WARNING') !== -1 ? 'WARNING' : l.indexOf('ERROR') !== -1 ? 'ERROR' : 'info';
+            html += '<div class="ll ' + c + '">' + esc(l) + '</div>';
+        }
+        el.innerHTML = html;
+        el.scrollTop = el.scrollHeight;
+    }).catch(function() {});
+}
+
+function clrLog() { document.getElementById('logBox').innerHTML = '<div class="ll info">Cleared</div>'; }
+
+document.getElementById('logBox').addEventListener('scroll', function() {
+    autoScr = this.scrollTop + this.clientHeight >= this.scrollHeight - 60;
+});
+
+/* ===== ACTIONS ===== */
+function runBot(id) {
+    var b = document.getElementById('runBtn');
+    b.disabled = true; b.innerHTML = '⏳ Starting...';
+    api('/api/run', { method: 'POST', body: { account_id: id || null } }).then(function() {
+        toast(id ? 'Started: ' + id : 'Started: all', 'ok');
+        setTimeout(refresh, 800);
+    }).catch(function() { b.disabled = false; b.innerHTML = '▶ Run All'; });
+}
+
+function saveSched() {
+    var days = getSelectedDays();
+    api('/api/schedule', { method: 'POST', body: { times: document.getElementById('schIn').value, days: days } })
+    .then(function() { toast('Schedule saved', 'ok'); })
+    .catch(function(e) { toast(e.message, 'er'); });
+}
+
+function preset(t) { document.getElementById('schIn').value = t; renderSchTags(); saveSched(); }
+
+function addCustomTime() {
+    var picker = document.getElementById('custTime');
+    var val = picker.value;
+    if (!val) { toast('Select a time', 'er'); return; }
+    var input = document.getElementById('schIn');
+    var times = input.value.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t.length > 0; });
+    if (times.indexOf(val) !== -1) { toast(val + ' already exists', 'er'); return; }
+    times.push(val);
+    times.sort();
+    input.value = times.join(', ');
+    picker.value = '';
+    renderSchTags();
+    saveSched();
+}
+
+function renderSchTags() {
+    var input = document.getElementById('schIn');
+    var container = document.getElementById('schTags');
+    if (!container) return;
+    
+    var times = input.value.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t.length > 0; });
+    if (times.length === 0) {
+        container.innerHTML = '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">No times scheduled. Add one below.</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < times.length; i++) {
+        var t = times[i];
+        html += '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent2);padding:4px 8px;border-radius:var(--rs);font-size:12px;font-weight:500">' +
+                t + 
+                '<span onclick="removeSchTime(\'' + t + '\')" style="cursor:pointer;opacity:0.6;font-size:10px;font-weight:bold;padding-left:2px" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">✕</span>' +
+                '</span>';
+    }
+    container.innerHTML = html;
+}
+
+function removeSchTime(t) {
+    var input = document.getElementById('schIn');
+    var times = input.value.split(',').map(function(x) { return x.trim(); }).filter(function(x) { return x.length > 0 && x !== t; });
+    input.value = times.join(', ');
+    renderSchTags();
+    saveSched();
+}
+
+function saveSet() {
+    api('/api/settings', { method: 'POST', body: { headless: document.getElementById('hlSel').value === 'true' } })
+    .then(function() { toast('Saved', 'ok'); });
+}
+
+/* ===== MODAL ===== */
+function showM(id) { document.getElementById(id).classList.add('sh'); var i = document.getElementById('nId'); if (i) setTimeout(function() { i.focus(); }, 100); }
+function closeM(id) { document.getElementById(id).classList.remove('sh'); }
+
+function addAcc() {
+    var id = document.getElementById('nId').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (!id) { toast('Account ID is required', 'er'); return; }
+    var em = document.getElementById('nEm').value.trim();
+    var pw = document.getElementById('nPw').value.trim();
+    
+    var btn = document.querySelector('#mAdd .bp');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    
+    api('/api/accounts', {
+        method: 'POST',
+        body: { account_id: id, email: em, password: pw }
+    }).then(function(d) {
+        closeM('mAdd');
+        toast('Added: ' + id, 'ok');
+        document.getElementById('nId').value = '';
+        document.getElementById('nEm').value = '';
+        document.getElementById('nPw').value = '';
+        refresh();
+    }).catch(function(e) {
+        toast(e.message || 'Failed to add account', 'er');
+    }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Add Account';
+    });
+}
+
+function rmAcc(id) { if (!confirm('Remove "' + id + '"?')) return; api('/api/accounts', { method: 'DELETE', body: { account_id: id, delete_session: false } }).then(function() { toast('Removed: ' + id, 'ok'); refresh(); }); }
+function rmPdf(path) { if (!confirm('Remove this download?')) return; api('/api/download-pdf/' + path, { method: 'DELETE' }).then(function() { toast('Removed PDF', 'ok'); refresh(); }); }
+function loadAllDl() { api('/api/downloads').then(function(d) { renderDl(d.downloads); }); }
+
+/* ===== UPLOAD ===== */
+function fillDrop(acc) {
+    accCache = acc;
+    var s = document.getElementById('upSel');
+    var cv = s.value;
+    s.innerHTML = '<option value="">-- Choose --</option>';
+    var sorted = acc.slice().sort(function(a, b) { if (a.has_session === b.has_session) return a.id.localeCompare(b.id); return a.has_session ? 1 : -1; });
+    for (var i = 0; i < sorted.length; i++) {
+        var a = sorted[i];
+        var o = document.createElement('option');
+        o.value = a.id;
+        o.textContent = (a.has_session ? '✅ ' : '⚠️ ') + a.id + (a.has_session ? ' (' + a.session_size_kb + 'KB, ' + ta(a.session_modified) + ')' : ' (no session)');
+        s.appendChild(o);
+    }
+    if (cv && acc.find(function(a) { return a.id === cv; })) s.value = cv;
+    var ns = acc.filter(function(a) { return !a.has_session; });
+    if (ns.length === 1 && !s.value) { s.value = ns[0].id; onSelChange(); }
+}
+
+function onSelChange() {
+    var s = document.getElementById('upSel'), n = document.getElementById('upNew'), st = document.getElementById('upStat');
+    if (s.value) {
+        n.disabled = true; n.style.opacity = '.4'; n.value = ''; upId = s.value;
+        var a = null; for (var i = 0; i < accCache.length; i++) { if (accCache[i].id === s.value) { a = accCache[i]; break; } }
+        if (a && a.has_session) st.className = 'sb act', st.innerHTML = '<strong>✅ Active session</strong><div class="dt">Updated: ' + new Date(a.session_modified).toLocaleString() + '<br>Size: ' + a.session_size_kb + ' KB<br><em>Uploading replaces it.</em></div>';
+        else if (a) st.className = 'sb exp', st.innerHTML = '<strong>⚠️ No session</strong><div class="dt">Run <code>login_setup.py ' + a.id + '</code> on your PC first.</div>';
+    } else { n.disabled = false; n.style.opacity = '1'; st.className = ''; st.innerHTML = ''; upId = null; }
+    vUp();
+}
+
+function onNewInput() {
+    var s = document.getElementById('upSel'), n = document.getElementById('upNew'), st = document.getElementById('upStat');
+    var v = n.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, ''); n.value = v;
+    if (v) {
+        s.value = ''; s.disabled = true; s.style.opacity = '.4';
+        var exists = false; for (var i = 0; i < accCache.length; i++) { if (accCache[i].id === v) { exists = true; break; } }
+        if (exists) { st.className = 'sb exp'; st.innerHTML = '<strong>⚠️ "' + v + '" exists</strong><div class="dt">Select from dropdown above.</div>'; upId = null; }
+        else { st.className = 'sb nw'; st.innerHTML = '<strong>🆕 New: ' + v + '</strong><div class="dt">Upload creates this account.</div>'; upId = v; }
+    } else { s.disabled = false; s.style.opacity = '1'; st.className = ''; st.innerHTML = ''; upId = null; }
+    vUp();
+}
+
+function onFileSel(i) {
+    if (i.files.length) {
+        selFile = i.files[0];
+        document.getElementById('upIco').textContent = '✅';
+        document.getElementById('upTx').innerHTML = 'Selected';
+        var p = document.getElementById('fpBox'); p.style.display = 'flex'; p.className = 'fp';
+        p.innerHTML = '<span>📄</span><span class="nm">' + esc(selFile.name) + '</span><span class="sz">' + fSz(selFile.size) + '</span><button class="bg bxs" onclick="clrF(event)" style="color:var(--red)">✕</button>';
+    }
+    vUp();
+}
+
+function clrF(e) {
+    e.stopPropagation(); selFile = null;
+    document.getElementById('upFile').value = '';
+    document.getElementById('upIco').textContent = '📁';
+    document.getElementById('upTx').innerHTML = 'Click to select <strong>state.json</strong>';
+    document.getElementById('fpBox').style.display = 'none';
+    vUp();
+}
+
+function vUp() {
+    var b = document.getElementById('upBtn');
+    var alb = document.getElementById('autoLoginBtn');
+    var ok = upId && selFile;
+    b.disabled = !ok;
+    b.textContent = ok ? 'Upload for "' + upId + '"' : 'Upload Session';
+
+    if (alb) {
+        alb.disabled = !upId;
+        alb.textContent = upId ? '🔑 Auto Login for "' + upId + '"' : '🔑 Auto Login';
+    }
+}
+
+function createSession(id) {
+    if (!confirm('Run auto-login for "' + id + '"? This will attempt to log in using credentials in the .env file.')) return;
+    toast('Starting auto-login for ' + id + '...', 'ok');
+    var rb = document.getElementById('runBtn');
+    if (rb) {
+        rb.disabled = true;
+        rb.innerHTML = '⏳ Starting...';
+    }
+    api('/api/create-session', { method: 'POST', body: { account_id: id } })
+    .then(function(d) {
+        toast('Auto-login process started. Check Live Logs!', 'ok');
+        setTimeout(refresh, 800);
+    })
+    .catch(function(e) {
+        toast(e.message || 'Failed to start auto-login', 'er');
+        if (rb) {
+            rb.disabled = false;
+            rb.innerHTML = '▶ Run All';
+        }
+    });
+}
+
+function doAutoLogin() {
+    if (!upId) return toast('Select or enter an account ID first', 'er');
+    createSession(upId);
+}
+
+function doUpload() {
+    if (!upId || !selFile) return toast('Select account and file', 'er');
+    var b = document.getElementById('upBtn');
+    var ot = b.textContent; b.disabled = true; b.textContent = 'Uploading...';
+    var fd = new FormData(); fd.append('account_id', upId); fd.append('file', selFile);
+    fetch(API_BASE + '/api/upload-session', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        if (!d.success) throw new Error(d.error);
+        toast('✅ Uploaded: ' + upId, 'ok');
+        selFile = null; document.getElementById('upFile').value = '';
+        document.getElementById('upIco').textContent = '📁';
+        document.getElementById('upTx').innerHTML = 'Click to select <strong>state.json</strong>';
+        document.getElementById('fpBox').style.display = 'none';
+        document.getElementById('upSel').value = ''; document.getElementById('upSel').disabled = false; document.getElementById('upSel').style.opacity = '1';
+        document.getElementById('upNew').value = ''; document.getElementById('upNew').disabled = false; document.getElementById('upNew').style.opacity = '1';
+        document.getElementById('upStat').className = ''; document.getElementById('upStat').innerHTML = ''; upId = null;
+        refresh();
+    }).catch(function(e) { toast(e.message, 'er'); }).finally(function() { b.disabled = false; b.textContent = ot; vUp(); });
+}
+
+/* ===== UTILS ===== */
+function toast(m, t) {
+    if (!t) t = 'ok';
+    var c = document.getElementById('tC');
+    var e = document.createElement('div'); e.className = 'tt ' + t; e.textContent = m; c.appendChild(e);
+    requestAnimationFrame(function() { e.classList.add('sh'); });
+    setTimeout(function() { e.classList.remove('sh'); setTimeout(function() { e.remove(); }, 300); }, 3000);
+}
+
+function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function ta(iso) {
+    if (!iso) return '';
+    var diff = Date.now() - new Date(iso).getTime();
+    var m = Math.floor(diff / 60000);
+    if (m < 1) return 'now';
+    if (m < 60) return m + 'm ago';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    var dd = Math.floor(h / 24);
+    if (dd < 7) return dd + 'd ago';
+    if (dd < 30) return Math.floor(dd / 7) + 'w ago';
+    return new Date(iso).toLocaleDateString();
+}
+
+function fSz(b) { return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB'; }
+</script>
+</body>
+</html>
