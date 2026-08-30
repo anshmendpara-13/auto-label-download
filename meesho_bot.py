@@ -77,6 +77,12 @@ def get_seller_slug(page):
             
     match = re.search(r"/growth/([^/]+)/home", page.url)
     if not match:
+        try:
+            title = page.title()
+            body_text = page.locator("body").inner_text()[:300].replace("\n", " ")
+            log.warning(f"[{page.url}] Diagnostics - Title: '{title}' | Text: {body_text}")
+        except Exception as diag_err:
+            log.warning(f"Could not gather page diagnostics: {diag_err}")
         raise RuntimeError(f"Cannot detect seller slug. URL: {page.url}")
     return match.group(1)
 
