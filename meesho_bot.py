@@ -49,6 +49,14 @@ def get_seller_slug(page):
     page.goto("https://supplier.meesho.com/panel/v3/new/growth/home", wait_until="load", timeout=60000)
     if "/root/login" in page.url:
         raise SessionExpired("Redirected to login")
+        
+    # Wait up to 15 seconds for client-side routing to append the seller slug
+    try:
+        page.wait_for_url(re.compile(r"/growth/([^/]+)/home"), timeout=15000)
+    except Exception:
+        if "/root/login" in page.url:
+            raise SessionExpired("Redirected to login")
+            
     match = re.search(r"/growth/([^/]+)/home", page.url)
     if not match:
         raise RuntimeError(f"Cannot detect seller slug. URL: {page.url}")

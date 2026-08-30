@@ -56,6 +56,92 @@ def restore_sessions_from_env():
 
 restore_sessions_from_env()
 
+
+def clean_and_optimize_env():
+    if not ENV_FILE.exists():
+        return
+        
+    try:
+        content = ENV_FILE.read_text(encoding="utf-8")
+        lines = content.splitlines()
+        
+        env_dict = {}
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip()
+                if key == "ACCOUNTS":
+                    current = set(a.strip() for a in env_dict.get(key, "").split(",") if a.strip())
+                    new_accs = set(a.strip() for a in val.split(",") if a.strip())
+                    env_dict[key] = ",".join(sorted(current | new_accs))
+                else:
+                    env_dict[key] = val
+                    
+        detected_accounts = set()
+        for key in env_dict.keys():
+            if key.startswith("MEESHO_EMAIL_"):
+                acc = key[len("MEESHO_EMAIL_"):].lower()
+                if acc:
+                    detected_accounts.add(acc)
+            elif key.startswith("MEESHO_PASSWORD_"):
+                acc = key[len("MEESHO_PASSWORD_"):].lower()
+                if acc:
+                    detected_accounts.add(acc)
+                    
+        if detected_accounts:
+            current_accounts = set(a.strip() for a in env_dict.get("ACCOUNTS", "").split(",") if a.strip())
+            env_dict["ACCOUNTS"] = ",".join(sorted(current_accounts | detected_accounts))
+            
+        out = []
+        out.append("# ===== Meesho Bot Configuration =====\n")
+        
+        core_keys = ["ACCOUNTS", "SCHEDULE_TIMES", "SCHEDULE_DAYS", "HEADLESS", "DOWNLOAD_DIR"]
+        for key in core_keys:
+            if key in env_dict:
+                out.append(f"{key}={env_dict[key]}\n")
+        out.append("\n# ===== Account Credentials =====\n")
+        
+        accounts = sorted(list(detected_accounts))
+        for acc in accounts:
+            k = acc.upper()
+            email_key = f"MEESHO_EMAIL_{k}"
+            pass_key = f"MEESHO_PASSWORD_{k}"
+            session_key = f"MEESHO_SESSION_{k}"
+            
+            if email_key in env_dict:
+                out.append(f"{email_key}={env_dict[email_key]}\n")
+            if pass_key in env_dict:
+                out.append(f"{pass_key}={env_dict[pass_key]}\n")
+            if session_key in env_dict:
+                # Truncate session key output in local print logs to avoid cluttering
+                out.append(f"{session_key}={env_dict[session_key]}\n")
+            out.append("\n")
+            
+        remaining_keys = set(env_dict.keys()) - set(core_keys)
+        for acc in accounts:
+            k = acc.upper()
+            remaining_keys.discard(f"MEESHO_EMAIL_{k}")
+            remaining_keys.discard(f"MEESHO_PASSWORD_{k}")
+            remaining_keys.discard(f"MEESHO_SESSION_{k}")
+            
+        if remaining_keys:
+            out.append("# ===== Other Settings =====\n")
+            for key in sorted(remaining_keys):
+                out.append(f"{key}={env_dict[key]}\n")
+                
+        ENV_FILE.write_text("".join(out), encoding="utf-8")
+        print("[+] Environment file optimized and cleaned up successfully.")
+        
+    except Exception as e:
+        print(f"[!] Error optimizing environment file: {e}")
+
+
+clean_and_optimize_env()
+
 state = {"running": False, "current_account": None, "last_run": None, "next_run": None, "logs": []}
 
 
