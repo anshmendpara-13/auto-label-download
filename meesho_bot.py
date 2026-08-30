@@ -79,7 +79,7 @@ def get_state_path(account_id):
 
 
 def get_seller_slug(page):
-    page.goto("https://supplier.meesho.com/panel/v3/new/growth/home", wait_until="load", timeout=60000)
+    page.goto("https://supplier.meesho.com/panel/v3/new/growth/home", wait_until="domcontentloaded", timeout=60000)
     if "/root/login" in page.url:
         raise SessionExpired("Redirected to login")
         
@@ -115,7 +115,7 @@ def close_promo_popup(page):
 def accept_pending_orders(page, seller_slug):
     url = f"https://supplier.meesho.com/panel/v3/new/fulfillment/{seller_slug}/orders/pending"
     log.info("Opening Pending orders...")
-    page.goto(url, wait_until="load", timeout=60000)
+    page.goto(url, wait_until="domcontentloaded", timeout=60000)
     if "/root/login" in page.url:
         raise SessionExpired()
 
@@ -180,7 +180,7 @@ def apply_not_downloaded_filter(page):
 def download_labels(page, seller_slug, account_id):
     url = f"https://supplier.meesho.com/panel/v3/new/fulfillment/{seller_slug}/orders/ready-to-ship"
     log.info("Opening Ready to Ship...")
-    page.goto(url, wait_until="load", timeout=60000)
+    page.goto(url, wait_until="domcontentloaded", timeout=60000)
     if "/root/login" in page.url:
         raise SessionExpired()
 
