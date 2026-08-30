@@ -87,7 +87,15 @@ def save_session(account_id):
         print(f"[!] Add MEESHO_EMAIL_{account_id.upper()} and MEESHO_PASSWORD_{account_id.upper()} to .env")
         sys.exit(1)
 
-    headless_mode = os.getenv("HEADLESS", "false").lower() == "true"
+    # Auto-detect: force headless on Linux servers with no display (e.g. Render)
+    if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
+        headless_mode = True
+    elif os.environ.get("RENDER"):
+        headless_mode = True
+    else:
+        headless_mode = os.getenv("HEADLESS", "false").lower() == "true"
+
+    print(f"[+] Browser mode: {'headless' if headless_mode else 'visible'}")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless_mode)
         context = browser.new_context()

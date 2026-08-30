@@ -74,6 +74,9 @@ def clean_and_optimize_env():
                 key, val = line.split("=", 1)
                 key = key.strip()
                 val = val.strip()
+                # NEVER store session JSON in local .env — too large for Windows
+                if key.startswith("MEESHO_SESSION_"):
+                    continue
                 if key == "ACCOUNTS":
                     current = set(a.strip() for a in env_dict.get(key, "").split(",") if a.strip())
                     new_accs = set(a.strip() for a in val.split(",") if a.strip())
@@ -110,15 +113,11 @@ def clean_and_optimize_env():
             k = acc.upper()
             email_key = f"MEESHO_EMAIL_{k}"
             pass_key = f"MEESHO_PASSWORD_{k}"
-            session_key = f"MEESHO_SESSION_{k}"
             
             if email_key in env_dict:
                 out.append(f"{email_key}={env_dict[email_key]}\n")
             if pass_key in env_dict:
                 out.append(f"{pass_key}={env_dict[pass_key]}\n")
-            if session_key in env_dict:
-                # Truncate session key output in local print logs to avoid cluttering
-                out.append(f"{session_key}={env_dict[session_key]}\n")
             out.append("\n")
             
         remaining_keys = set(env_dict.keys()) - set(core_keys)
@@ -126,12 +125,14 @@ def clean_and_optimize_env():
             k = acc.upper()
             remaining_keys.discard(f"MEESHO_EMAIL_{k}")
             remaining_keys.discard(f"MEESHO_PASSWORD_{k}")
-            remaining_keys.discard(f"MEESHO_SESSION_{k}")
             
         if remaining_keys:
             out.append("# ===== Other Settings =====\n")
             for key in sorted(remaining_keys):
                 out.append(f"{key}={env_dict[key]}\n")
+
+        out.append("\n# NOTE: MEESHO_SESSION_* values should ONLY be set in Render's\n")
+        out.append("# Environment Variables UI. Never paste session JSON here.\n")
                 
         ENV_FILE.write_text("".join(out), encoding="utf-8")
         print("[+] Environment file optimized and cleaned up successfully.")

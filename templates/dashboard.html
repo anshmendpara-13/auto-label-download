@@ -158,13 +158,15 @@
         <button class="bs bf" id="autoLoginBtn" onclick="doAutoLogin()" disabled style="margin-top:8px">🔑 Auto Login</button>
         <div class="ib">
           <div class="ct">
-            <strong style="color:var(--t1);display:block;margin-bottom:4px">How to generate:</strong>
-            1. PC: <code>python login_setup.py &lt;id&gt;</code><br>
+            <strong style="color:var(--t1);display:block;margin-bottom:4px">How to generate session:</strong>
+            1. On your PC: <code>python login_setup.py &lt;id&gt;</code><br>
             2. Email and password auto-filled and auto-login<br>
-            3. Saved to <code>data/&lt;id&gt;/state.json</code><br>
-            4. Upload that file here<br><br>
-            <strong style="color:var(--amber);display:block;margin-bottom:4px">☁️ Persistent Server Hosting:</strong>
-            To make sessions permanent on Render free tier, copy the contents of the generated <code>state.json</code> file and add it as an Environment Variable in Render with the key: <code>MEESHO_SESSION_&lt;ACCOUNT_ID&gt;</code> (e.g. <code>MEESHO_SESSION_LAVANYAFASHION</code>).
+            3. Session saved to <code>data/&lt;id&gt;/state.json</code><br>
+            4. Upload that file here using the button above<br><br>
+            <strong style="color:var(--green);display:block;margin-bottom:4px">✅ Upload works on both local PC and Render!</strong>
+            Just select the account, pick the <code>state.json</code> file, and click Upload.<br><br>
+            <strong style="color:var(--amber);display:block;margin-bottom:4px">⚠️ Render Free Tier Note:</strong>
+            Uploaded sessions are lost when Render restarts. To make them permanent, add <code>MEESHO_SESSION_&lt;ACCOUNT_ID&gt;</code> as an Environment Variable in Render's dashboard with the contents of <code>state.json</code>.
           </div>
         </div>
       </div>

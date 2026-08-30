@@ -22,8 +22,26 @@ from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 load_dotenv()
 
 DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", "./downloads"))
-HEADLESS = os.getenv("HEADLESS", "false").lower() == "true"
 DATA_DIR = Path("data")
+
+
+def is_headless():
+    """Dynamically determine headless mode.
+    Always forces headless=True if:
+      - Running on a server with no display (DISPLAY not set, typical on Linux servers)
+      - Running on Render (RENDER env var is set)
+      - HEADLESS env var is explicitly 'true'
+    Returns False (visible browser) only when running locally with a display."""
+    load_dotenv(override=False)  # Don't override already-set env vars (e.g. from Render)
+    # Force headless on any Linux server with no display
+    if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
+        return True
+    # Force headless if running on Render cloud
+    if os.environ.get("RENDER"):
+        return True
+    # Respect explicit setting
+    return os.getenv("HEADLESS", "false").lower() == "true"
+
 
 Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
@@ -227,10 +245,10 @@ def run_once(account_id=None, is_retry=False):
         log.error(f"[{label}] No session: {state_file}")
         return
 
-    log.info(f"[{label}] Starting...")
+    log.info(f"[{label}] Starting... (headless={is_headless()})")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=HEADLESS)
+        browser = p.chromium.launch(headless=is_headless())
         context = browser.new_context(storage_state=str(state_file), accept_downloads=True)
         page = context.new_page()
 
