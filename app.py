@@ -34,6 +34,28 @@ ENV_FILE = Path(".env")
 for d in [DATA_DIR, DOWNLOAD_DIR, LOGS_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
+
+def restore_sessions_from_env():
+    load_dotenv(override=True)
+    for key, value in os.environ.items():
+        if key.startswith("MEESHO_SESSION_"):
+            account_id = key[len("MEESHO_SESSION_"):].lower()
+            if not account_id:
+                continue
+            account_dir = DATA_DIR / account_id
+            account_dir.mkdir(parents=True, exist_ok=True)
+            state_file = account_dir / "state.json"
+            try:
+                # Validate it is valid JSON
+                session_data = json.loads(value)
+                state_file.write_text(json.dumps(session_data), encoding="utf-8")
+                print(f"[+] Restored session for {account_id} from environment variable {key}")
+            except Exception as e:
+                print(f"[!] Failed to restore session for {account_id} from {key}: {e}")
+
+
+restore_sessions_from_env()
+
 state = {"running": False, "current_account": None, "last_run": None, "next_run": None, "logs": []}
 
 
