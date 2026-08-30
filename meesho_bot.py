@@ -43,6 +43,21 @@ def is_headless():
     return os.getenv("HEADLESS", "false").lower() == "true"
 
 
+def get_launch_args(headless_mode):
+    """Generates Playwright launch arguments, adding proxy settings if present in env."""
+    args = {"headless": headless_mode}
+    proxy_server = os.getenv("PROXY_SERVER")
+    if proxy_server:
+        args["proxy"] = {"server": proxy_server}
+        user = os.getenv("PROXY_USERNAME")
+        pwd = os.getenv("PROXY_PASSWORD")
+        if user:
+            args["proxy"]["username"] = user
+        if pwd:
+            args["proxy"]["password"] = pwd
+    return args
+
+
 Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -254,7 +269,7 @@ def run_once(account_id=None, is_retry=False):
     log.info(f"[{label}] Starting... (headless={is_headless()})")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=is_headless())
+        browser = p.chromium.launch(**get_launch_args(is_headless()))
         context = browser.new_context(storage_state=str(state_file), accept_downloads=True)
         page = context.new_page()
 

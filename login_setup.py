@@ -95,9 +95,22 @@ def save_session(account_id):
     else:
         headless_mode = os.getenv("HEADLESS", "false").lower() == "true"
 
-    print(f"[+] Browser mode: {'headless' if headless_mode else 'visible'}")
+    def get_launch_args(hl):
+        args = {"headless": hl}
+        proxy_server = os.getenv("PROXY_SERVER")
+        if proxy_server:
+            args["proxy"] = {"server": proxy_server}
+            user = os.getenv("PROXY_USERNAME")
+            pwd = os.getenv("PROXY_PASSWORD")
+            if user:
+                args["proxy"]["username"] = user
+            if pwd:
+                args["proxy"]["password"] = pwd
+        return args
+
+    print(f"[+] Browser mode: {'headless' if headless_mode else 'visible'} (proxy={bool(os.getenv('PROXY_SERVER'))})")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=headless_mode)
+        browser = p.chromium.launch(**get_launch_args(headless_mode))
         context = browser.new_context()
         page = context.new_page()
         page.goto(LOGIN_URL, wait_until="load")
